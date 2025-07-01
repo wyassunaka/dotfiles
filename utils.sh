@@ -10,7 +10,6 @@ function install_package() {
         echo "📦 $pkg já está instalado."
     else
         echo "📥 Instalando $pkg..."
-        sudo apt-get update -y
         sudo apt-get install -y "$pkg"
     fi
 }

@@ -3,7 +3,10 @@ set -e
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$DIR"
 
-# Garante que todos os scripts de instalação tenham permissão de execução
+echo "🔧 Atualizando cache do apt..."
+sudo apt-get update -y
+
+# Garantir permissão para os scripts
 find . -type f -name "install.sh" -exec chmod +x {} \;
 
 source "$DIR/utils.sh"
