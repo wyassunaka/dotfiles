@@ -10,7 +10,7 @@ source "$DIR/utils.sh"
 
 echo "🔧 Iniciando setup do ambiente..."
 
-for tool in vscode chrome postman flameshot sublimetext docker docker-compose copyq dbeaver teams htop meld jetbrains-toolbox; do
+for tool in vscode chrome postman flameshot sublimetext docker docker-compose copyq dbeaver teams htop meld jetbrains-toolbox sdkman asdf; do
     echo "▶ Instalando $tool..."
     "$DIR/$tool/install.sh"
 done
