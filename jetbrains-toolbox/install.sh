@@ -2,42 +2,54 @@
 set -e
 source "$(dirname "$0")/../utils.sh"
 
-INSTALL_DIR="$HOME/.local/share/JetBrains/Toolbox"
-TOOLBOX_BIN="$INSTALL_DIR/toolbox"
+INSTALL_DIR="$HOME/.local/jetbrains-toolbox"
+BIN_PATH="$INSTALL_DIR/bin/jetbrains-toolbox"
+BIN_LINK="$HOME/.local/bin/jetbrains-toolbox"
+DESKTOP_ENTRY="$HOME/.local/share/applications/jetbrains-toolbox.desktop"
 
-if [ -f "$TOOLBOX_BIN" ]; then
-    echo "✅ JetBrains Toolbox já instalado."
+if [ -x "$BIN_PATH" ]; then
+    echo "✅ JetBrains Toolbox já instalado em $INSTALL_DIR"
     exit 0
 fi
 
+install_package jq rsync
+
 echo "🌐 Buscando a versão mais recente do JetBrains Toolbox..."
 
-DOWNLOAD_URL=$(curl -s https://data.services.jetbrains.com/products/releases?code=TBA\&latest=true\&type=release \
-  | grep -oP 'https://download.jetbrains.com/toolbox/jetbrains-toolbox-[^"]+linux\.tar\.gz' \
-  | head -n 1)
+DOWNLOAD_URL=$(curl -s "https://data.services.jetbrains.com/products/releases?code=TBA&latest=true&type=release" \
+    | jq -r '.TBA[0].downloads.linux.link')
 
-if [ -z "$DOWNLOAD_URL" ]; then
+if [[ -z "$DOWNLOAD_URL" || "$DOWNLOAD_URL" == "null" ]]; then
     echo "❌ Não foi possível obter o link de download do JetBrains Toolbox."
     exit 1
 fi
 
-echo "📥 Baixando: $DOWNLOAD_URL"
+echo "📥 Baixando Toolbox de: $DOWNLOAD_URL"
 
 TMP_DIR=$(mktemp -d)
-ARCHIVE="$TMP_DIR/toolbox.tar.gz"
+cd "$TMP_DIR"
 
-wget -qO "$ARCHIVE" "$DOWNLOAD_URL"
-tar -xzf "$ARCHIVE" -C "$TMP_DIR"
+wget -q "$DOWNLOAD_URL" -O toolbox.tar.gz
+tar -xzf toolbox.tar.gz
 
-EXTRACTED_DIR=$(find "$TMP_DIR" -maxdepth 1 -type d -name "jetbrains-toolbox-*")
+TOOLBOX_FOLDER=$(find . -maxdepth 1 -type d -name "jetbrains-toolbox-*")
 
 mkdir -p "$INSTALL_DIR"
-mv "$EXTRACTED_DIR"/* "$INSTALL_DIR"
+rsync -a "$TOOLBOX_FOLDER"/ "$INSTALL_DIR"/
 
-if ! command -v toolbox &> /dev/null; then
-    sudo ln -s "$INSTALL_DIR/toolbox" /usr/local/bin/toolbox
-fi
+mkdir -p "$HOME/.local/bin"
+ln -sf "$BIN_PATH" "$BIN_LINK"
 
-rm -rf "$TMP_DIR"
+mkdir -p "$(dirname "$DESKTOP_ENTRY")"
+cat > "$DESKTOP_ENTRY" <<EOF
+[Desktop Entry]
+Name=JetBrains Toolbox
+Exec=$BIN_LINK
+Icon=$INSTALL_DIR/.install4j/jetbrains-toolbox.png
+Type=Application
+Categories=Development;
+EOF
+
+chmod +x "$DESKTOP_ENTRY"
 
 echo "✅ JetBrains Toolbox instalado com sucesso!"
